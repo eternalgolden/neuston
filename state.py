@@ -15,14 +15,17 @@ class Result:
     percent = 100
     barriers = []   # money, item, 판정, success
     effects = []    # money, item
+    search_count = 0
 
-    def __init__(self, content):
+    def __init__(self, content, count):
         self.content = ""
         self.percent = 100
+                       #    money is <0 for less and >0 for greater
                        #   money   item    roll    success
         self.barriers = [    0,      -1,     -1,     -1]
                        #   money   item
         self.effects = [     0,      -1]
+        self.search_count = count
 
         # parsing starts ---------------------
 
@@ -41,7 +44,7 @@ class Result:
             # load percent
         if current.find("%") != -1:
             current = current.split("%")
-            self.percent = current[0]
+            self.percent = int(current[0])
             current = current[1]
 
             # load barriers / effects
@@ -68,9 +71,9 @@ class Result:
                     self.effects[0] = int(amount[:len(amount)-1])
 
                 # success/fail
-                elif c.find("체크") != -1:
+                elif c.find("TRS") != -1 or c.find("ETH") != -1 or c.find("AQU") != -1 or c.find("KIN") != -1:
                     check = c.split(" ")
-                    self.barriers[2] = check[0][:len(check[0])-2]
+                    self.barriers[2] = check[0]
                     if check[1].find("성공") != -1:
                         self.barriers[3] = True
                     else:
@@ -82,7 +85,7 @@ class Result:
 
 
     def __str__(self):
-        return "Result: \ncontent-> " + self.content + "\npercent-> " + str(self.percent) + "%\nbarriers-> " + str(self.barriers) + "\neffects-> " + str(self.effects)
+        return "Result: \ncontent-> " + self.content + "\npercent-> " + str(self.percent) + "%\nbarriers-> " + str(self.barriers) + "\neffects-> " + str(self.effects) + "\nsearch_count : " + str(self.search_count)
 
 
 class State:
@@ -129,33 +132,22 @@ class State:
     # calculates which result & returns the next state included too
     # returns one of the omi choices (with a percentage)
     # gets potential results from pool_result -- assumes that all results have % in them
-    def choose_result(self, pool_result):
-
-        # pool_result = self.results[choice_id]
-
-        omikuji = []
-        omikuji_cuts = []
-        counter = 0
-        no_choice_option = ""
-
-
-        for omi in pool_result:
-            parsed = omi.split("| ") # first part is nn% + a and second part is the text
-            omikuji.append(parsed[1])
-            parsed = parsed[0].split("%") # first part is number second part is + a
-            counter += int(parsed[0])
-            omikuji_cuts.append(counter)
+    def choose_result(omikuji):
 
         draw = random.randint(0, 100)
-
+        omikuji_cuts = []
         counter = 0
-        for cut in omikuji_cuts:    # after drawing, also try to apply what it does to bag/status <-- probably will happen in char
-            if draw <= cut:
-                return omikuji[counter]
-    
-            counter += 1
 
-        return -1
+        for m in omikuji:
+            counter += m.percent
+            omikuji_cuts.append(counter)
+
+
+        for o in range(len(omikuji_cuts)):
+            if draw <= omikuji_cuts[o]:
+                return [omikuji[o], o]
+
+        return [omikuji[len(omikuji)-1], len(omikuji)-1]
 
     def make_copy(self):
         global_id = State.GLOBAL_ID
@@ -181,8 +173,8 @@ class State:
 
 
     def __eq__(self, other):
-        if self.ID != other.ID or type(other) != type(self):
-            return false
+        if other == None or type(other) != type(self) or self.ID != other.ID: 
+            return False
         return self.content == other.content and len(self.results) == len(other.results) and len(self.nxt) == len(other.nxt)
         
 

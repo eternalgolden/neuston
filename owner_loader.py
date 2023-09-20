@@ -32,7 +32,6 @@ def get_owners():
         read_range = gs.range_calc("E" + str(index), int(info[3]), True)
         ch_names = gs.flatten(gs.get(Sheet.OWNER.value, read_range))
         for ch in ch_names:
-            # instead of appending names swap this out with actual character files
             owner.character_list[ch] = character_list[ch]
 
         # add owner to owner list

@@ -26,5 +26,5 @@ class Sheet(Enum):
     ITEM_FOOD = "아이템:음식"
 
 class Dest(Enum):
-    DAWN = "새벽녘"
+    DAWN = "새벽녘마을"
     HQ = "본부"

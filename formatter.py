@@ -25,17 +25,16 @@ def choice_formatter(c):
         cs += "\n\n"
     return cs
 
-def content_formatter(character, isContent):
+def content_formatter(character):
     search_num = 5-character.search_count
     cs = (f":mag: 탐색 진행 현황 ({search_num}/5)\n"
-          f"> 현재 구역: {character.location}\n"
+          f"> 현재 구역: {character.place.name}\n"
           f"> 인원: {character.name}\n")
-    if isContent:
-        cs += f"{character.state.content}\n"
-        cs += choice_formatter(character.state.choices)
+    cs += f"{character.state.content}\n"
+    cs += choice_formatter(character.state.choices)
     return cs
 
 def place_formatter(place):
-    return f"> 현재 지역: {place.name}\n> {place.desc}"
+    return f"> 현재 지역: {place.name}\n{place.desc}"
 
 

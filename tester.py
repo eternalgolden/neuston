@@ -28,8 +28,8 @@ for i in range(50):
 gs.put("debug", (gs.range_calc("A1", 50, True)), data)
 '''
 
-
 '''
+
 RESULT TESTING
 
 results = gs.flatten(gs.get("탐색:새벽녘", "F5:F136"))
@@ -40,7 +40,7 @@ for r in results:
         print(str(res))
 '''
 
-
+'''
 #bag testing
 
 a = Character("romeo")
@@ -58,6 +58,7 @@ a.add_bag("cat????", 1, True)
 a.subtract_bag("cat????", 1)
 print(str(a))
 
+'''
 
 #gs.put_single('Sheet2', 'C2', 'mlem')
 

@@ -23,6 +23,7 @@ def get_characters():
 
         current = Character(row[1])
         current.money = int(row[2])
+        current.stats = [int(row[4]), int(row[5]), int(row[6]), int(row[7])]
         current.place = row[3] # later replace with place obj
         current.bag_index[0] = "B"
         current.bag_index[1] = r+1+2

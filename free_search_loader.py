@@ -11,7 +11,7 @@ from state import *
 
 # adds all the states to the right array
 # @param -- content, choices, results (in list form)
-def add_states(contents, choices, results, nxt):
+def add_states(contents, choices, results, nxt, count):
     master = []
 
     curr_content = -1
@@ -30,9 +30,9 @@ def add_states(contents, choices, results, nxt):
                 if nxt[i][0] != '-':
                     nnxt = nxt[i][0]
                 else:
-                    nnxt = -1
+                    nnxt = None
 
-                a.add_result(curr_choice, Result(results[i][0]), nnxt)
+                a.add_result(curr_choice, Result(results[i][0], int(count[i][0])), nnxt)
 
             master.append(a)
         # if content is empty
@@ -45,17 +45,17 @@ def add_states(contents, choices, results, nxt):
                 if nxt[i][0] != '-':
                     nnxt = nxt[i][0]
                 else:
-                    nnxt = -1
+                    nnxt = None
 
-                master[curr_content].add_result(curr_choice, Result(results[i][0]), nnxt)
+                master[curr_content].add_result(curr_choice, Result(results[i][0], int(count[i][0])), nnxt)
             # if choice is empty
             else:
                 if nxt[i][0] != '-':
                     nnxt = nxt[i][0]
                 else:
-                    nnxt = -1
+                    nnxt = None
 
-                master[curr_content].add_result(curr_choice, Result(results[i][0]), nnxt)
+                master[curr_content].add_result(curr_choice, Result(results[i][0], int(count[i][0])), nnxt)
 
     return master
 
@@ -72,10 +72,10 @@ def manage_next(master):
         nxt = e.nxt;
         for i in range(len(nxt)):
             for j in range(len(nxt[i])):
-                if int(nxt[i][j]) != -1 and (int(nxt[i][j])) != e.ID:
+                if nxt[i][j] != None and (int(nxt[i][j])) != e.ID:
                     bloom_filter.append(int(nxt[i][j]))
                     e.change_nxt(i,j,master[ int(nxt[i][j])]) 
-                elif int(nxt[i][j]) != -1:
+                elif nxt[i][j] != None:
                     e.change_nxt(i,j,e)
 
     for i in range(len(master)):
@@ -93,17 +93,18 @@ def init_dawn():
 
     dawn_sheet = "탐색:새벽녘"
 
-    #              contents    choices    results    next  
-    dawn_range = ['D5:D136', 'E5:E136', 'F5:F136', 'G5:G136']
+    #              contents    choices    results    next   search_count
+    dawn_range = ['D5:D136', 'E5:E136', 'F5:F136', 'G5:G136', 'H5:H136' ]
     
     dawn_content =  gs.get(dawn_sheet, dawn_range[0])
     dawn_choices =  gs.get(dawn_sheet, dawn_range[1])
     dawn_results =  gs.get(dawn_sheet, dawn_range[2])
     dawn_nxt =      gs.get(dawn_sheet, dawn_range[3])
+    dawn_count =    gs.get(dawn_sheet, dawn_range[4])
 
     dawn_events = []
 
-    init_dawn_events = add_states(dawn_content, dawn_choices, dawn_results, dawn_nxt)
+    init_dawn_events = add_states(dawn_content, dawn_choices, dawn_results, dawn_nxt, dawn_count)
 
     dawn_events = manage_next(init_dawn_events)
 

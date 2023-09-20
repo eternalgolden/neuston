@@ -33,7 +33,7 @@ from place import *
 
 import google_sheets as gs
 import owner_loader as ol
-import globe as g
+import formatter as frmat
 import discord
 
 places = {}
@@ -74,9 +74,10 @@ async def on_ready():
     for n, ch in characters.items():
         if ch.place == Dest.DAWN.value:
             ch.place = places["dawn"]
+            print(str(ch.name) + " is in dawn")
         elif ch.place == Dest.HQ.value:
             ch.place = places["hq"]
-
+            print(str(ch.name) + " is in hq")
     for o, ow in owners.items():
         if ow.main != None:
             ow.main = ow.character_list[ow.main]
@@ -158,10 +159,21 @@ async def on_message(m):
         await m.channel.send(ret_str)
         return
 
+    elif "탐색" in msg:
+        await m.channel.send(curr_owner.main.search())
+        return
 
+    elif "위치" in msg:
+        await m.channel.send(frmat.place_formatter(curr_owner.main.place))
+        return
 
-
-
+    else: # choices!!
+        if curr_owner.main.state != None:
+            a = curr_owner.main.choice(msg)
+            print(a)
+            if a != "":
+                await m.channel.send(a)
+        return
 
 
 
