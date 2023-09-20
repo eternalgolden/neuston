@@ -25,6 +25,11 @@ class Sheet(Enum):
     ITEM_VEG = "아이템:채소"
     ITEM_FOOD = "아이템:음식"
 
+class Stat(Enum):
+    TRS = 0
+    ETH = 1
+    AQU = 2
+    KIN = 3
 class Dest(Enum):
     DAWN = "새벽녘마을"
     HQ = "본부"

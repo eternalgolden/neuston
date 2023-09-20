@@ -130,7 +130,7 @@ async def on_message(m):
         await m.channel.send(return_msg)
         return
 
-    elif "정보" in msg:
+    elif "정보" == msg:
         ret_str = f"[:mag: 알티 아스테레스 [본부]가 위치해있는 머큐리에서 탐색 가능한 구역 목록입니다.\n\n"
 
         for p, pl in places.items():
@@ -159,12 +159,19 @@ async def on_message(m):
         await m.channel.send(ret_str)
         return
 
-    elif "탐색" in msg:
-        await m.channel.send(curr_owner.main.search())
+    elif "탐색" == msg:
+        if curr_owner.main.search_count < -5:
+            await m.channel.send("*오늘은 더이상 탐색을 진행할 수 없다.*")
+        else:
+            await m.channel.send(curr_owner.main.search())
         return
 
-    elif "위치" in msg:
+    elif "위치" == msg:
         await m.channel.send(frmat.place_formatter(curr_owner.main.place))
+        return
+
+    elif "나" == msg:
+        await m.channel.send(frmat.character_formatter(curr_owner.main))
         return
 
     else: # choices!!

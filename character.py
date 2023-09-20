@@ -21,7 +21,8 @@ class Character:
     title_list = []
     state = None
     search_count = 0
-    stats = []
+    stats = {}
+    already_seen = []
 
 
     def __init__(self, name):
@@ -34,14 +35,16 @@ class Character:
         self.title_list = []
         self.state = None
         self.search_count = 0
-        self.stats = [0, 0, 0, 0]
+                    #TRS ETH AQU KIN
+        self.stats = {'TRS': 0, 'ETH': 0, 'AQU': 0, 'KIN': 0}
+        self.already_seen = []
 
 
     def add_bag(self, item, amount, update):
         if item in self.bag:
-            self.bag[item] += amount
+            self.bag[item] += int(amount)
         else:
-            self.bag[item] = amount
+            self.bag[item] = int(amount)
 
         if update:
             self.put_bag()
@@ -66,18 +69,19 @@ class Character:
         return False
 
     def add_money(self, m):
+        ret_string = ""
         self.money += m
-        money_range = 'C' + str(self.bag_index[1]-1)
-        gs.put(Sheet.CHARACTER.value, money_range, self.money)
-        return f"*{self.name}의 소지금에 {m}C가 추가됐다.*"
 
-    def subtract_money(self, m):
-        self.money -= m
-        if self.money < 0:
-            self.money = 0
-        gs.put(Sheet.CHARACTER.value, 'C' + str(self.bag_index[1]-1), self.money)
-        return f"*{self.name}의 소지금에서 {m}C가 빠져나갔다...*"
+        if m > 0:
+            ret_string = f"*{self.name}의 소지금에 {m}C가 추가됐다.*"
+        else:
+            if self.money < 0:
+                self.money = 0
+            ret_string = f"*{self.name}의 소지금에 {m}C가 추가됐다.*"
 
+
+        gs.put(Sheet.CHARACTER.value, 'C' + str(self.bag_index[1]-1), [self.money])
+        return ret_string
 
     def print_bag(self):
         compiled_string = ""
@@ -85,16 +89,6 @@ class Character:
         for key in self.bag.keys():
             compiled_string += f"{key}({self.bag[key]}), "
         return compiled_string[:len(compiled_string)-2]
-
-    def roll_stats(self):
-        success = []
-        for stat in self.stats:
-            if random.randint(1,10) < stat:
-                success.append(True)
-            else:
-                success.append(False)
-        return success
-
 
     def put_bag(self):
         top = list(self.bag.keys())
@@ -134,9 +128,6 @@ class Character:
             c+=f"state: {self.state.ID}\n\n"
         return c    
 
-    def print_place(self):
-        return frmat.place_formatter(self.place)
-
     def search(self):
 
         if len(self.place.free_search_deck) == 0:
@@ -145,7 +136,11 @@ class Character:
         # choose a new state
         if self.state == None:
             new_event = random.choice(self.place.free_search_deck)
+            while new_event.ID in self.already_seen:
+                new_event = random.choice(self.place.free_search_deck)
             self.state = new_event
+            self.already_seen.append(new_event.ID)
+
 
         return_string = frmat.content_formatter(self)
 
@@ -154,32 +149,30 @@ class Character:
 
         return return_string
 
-    def possible_result(self, result, stat_rolls):
+    def possible_result(self, result, roll_20):
 
+        # [ money, roll, min success, filter, success, (items/amount) x n ]
+        # money calculation
         if result.barriers[0] < 0 and self.money > (-1*int(result.barriers[0])):
             return False
         elif result.barriers[0] > 0 and self.money <= (int(result.barriers[0])):
             return False
 
-        if result.barriers[1] != -1 and not result.barriers[1] in self.bag:
-            return False
+        # stat calculation
+        self_stat = 0
+        if result.barriers[1] != -1:
+            # get self stat by TRS, ETH, AQU OR KIN
+            self_stat = self.stats[result.barriers[1]]
+            if self_stat < int(result.barriers[2]):
+                #               result filter       roll 20     self stat filter
+                re_calc = int(result.barriers[3]) + roll_20 + int(self_stat/5)
+                if (re_calc >= int(result.barriers[2])) != result.barriers[4]:
+                    return False
 
-        # gotta work on roll possible result and success
-        if result.barriers[2] == "TRS":
-            if result.barriers[3] != stat_rolls[0]:
+        for i in range(5, len(result.barriers)-1, 2):
+            if not result.barriers[i] in self.bag or self.bag[result.barriers[i]] < int(result.barriers[i+1]):
                 return False
 
-        elif result.barriers[2] == "ETH":
-            if result.barriers[3] != stat_rolls[1]:
-                return False
-
-        elif result.barriers[2] == "AQU":
-            if result.barriers[3] != stat_rolls[2]:
-                return False
-
-        elif result.barriers[2] == "KIN":
-            if result.barriers[3] != stat_rolls[3]:
-                return False
         return True
 
 
@@ -189,6 +182,7 @@ class Character:
             return
 
         ret_msg = ""
+        roll_20 = random.randint(1,20)
 
         try:
             print("1")
@@ -203,11 +197,10 @@ class Character:
                 chosen_result_num = 0
             else:
                 print("3")
-                stat_rolls = self.roll_stats()
                 possible_results = []
                 possible_num = []
                 for r in range(len(pool)):
-                    if self.possible_result(pool[r], stat_rolls):
+                    if self.possible_result(pool[r], roll_20):
                         possible_results.append(pool[r])
                         possible_num.append(r)
 
@@ -249,17 +242,36 @@ class Character:
                 self.state = None
                 return "*에러가 발생했다. 이지비에게 보고하고... 일단은 현 탐색상황을 리셋시켰으니 다른곳으로 가보세요*"
             else:
+                # apply search count, go to next
                 self.search_count += chosen_result.search_count
                 self.state = self.state.nxt[choice_index][chosen_result_num]
+                # add/sub money
+                self.add_money(int(chosen_result.effects[0]))
+                # add/sub items
+                for i in range(1, len(chosen_result.effects)-1, 2):
+                    if chosen_result.effects[i] in chosen_result.barriers:
+                        self.subtract_bag(chosen_result.effects[i], chosen_result.effects[i+1])
+                    else:
+                        self.add_bag(chosen_result.effects[i], chosen_result.effects[i+1], True)
 
+                ret = chosen_result.content
+
+                if chosen_result.barriers[1] != -1:
+                    bar =       chosen_result.barriers[1]
+                    min_suc =   int(chosen_result.barriers[2])
+                    filt =      int(chosen_result.barriers[3])
+                    succ =      chosen_result.barriers[4]
+
+                    ret = frmat.roll_formatter(bar, self.stats[bar], filt, int(self.stats[bar]/5), roll_20, min_suc, succ) + ret
+
+                # debug
                 print("in here")
                 print(str(chosen_result))
-                print(chosen_result.content)
-                # also apply other stuff here
-                return chosen_result.content
+
+                return ret
 
         except ValueError as e:
-            return_string = "*입력한 선택지는 목록에 없다.*\n"
+            return_string = f"*'{msg}'는 목록에 없다.*\n"
             return_string += frmat.choice_formatter(self.state.choices)
             return return_string
 

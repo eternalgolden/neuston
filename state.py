@@ -13,18 +13,18 @@ import random
 class Result:
     content = ""
     percent = 100
-    barriers = []   # money, item, 판정, success
-    effects = []    # money, item
+    barriers = []   
+    effects = []
     search_count = 0
 
     def __init__(self, content, count):
         self.content = ""
         self.percent = 100
                        #    money is <0 for less and >0 for greater
-                       #   money   item    roll    success
-        self.barriers = [    0,      -1,     -1,     -1]
-                       #   money   item
-        self.effects = [     0,      -1]
+                       #   money   roll    min success,   보정  success, (item , amount) x n 
+        self.barriers = [    0,      -1,     -1,           -1 ,    -1]
+                       #   money  ( item , amount ) x n
+        self.effects = [     0      ]
         self.search_count = count
 
         # parsing starts ---------------------
@@ -54,7 +54,10 @@ class Result:
                 # barriers
                 if c.find("아이템소지") != -1:
                     name = c.split(": ")[1]
-                    self.barriers[1] = name[:len(name)-1]
+                    name = name.split("/")
+                    self.barriers.append(name[0])
+                    self.barriers.append(name[1][:len(name[1])-1])
+
                 elif c.find("소지금 >") != -1:
                     amount = c.split(">")[1]
                     self.barriers[0] = int(amount[:len(amount)-1])
@@ -65,7 +68,10 @@ class Result:
                 # effects
                 elif c.find("아이템소비") != -1 or c.find("아이템:") != -1:
                     name = c.split(": ")[1]
-                    self.effects[1] = name[:len(name)-1]
+                    name = name.split("/")
+                    self.effects.append(name[0])
+                    self.effects.append(int(name[1][:len(name[1])-1]))
+
                 elif c.find("소지금") != -1: # 소지금 +-
                     amount = c.split(" ")[1]
                     self.effects[0] = int(amount[:len(amount)-1])
@@ -73,11 +79,13 @@ class Result:
                 # success/fail
                 elif c.find("TRS") != -1 or c.find("ETH") != -1 or c.find("AQU") != -1 or c.find("KIN") != -1:
                     check = c.split(" ")
-                    self.barriers[2] = check[0]
-                    if check[1].find("성공") != -1:
-                        self.barriers[3] = True
+                    self.barriers[1] = check[0]
+                    self.barriers[2] = check[1]
+                    self.barriers[3] = check[2]
+                    if check[3].find("성공") != -1:
+                        self.barriers[4] = True
                     else:
-                        self.barriers[3] = False
+                        self.barriers[4] = False
 
 
 
