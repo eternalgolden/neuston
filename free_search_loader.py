@@ -94,7 +94,7 @@ def init_dawn():
     dawn_sheet = "탐색:새벽녘"
 
     #              contents    choices    results    next   search_count
-    dawn_range = ['D5:D136', 'E5:E136', 'F5:F136', 'G5:G136', 'H5:H136' ]
+    dawn_range = ['D5:D137', 'E5:E137', 'F5:F137', 'G5:G137', 'H5:H137' ]
     
     dawn_content =  gs.get(dawn_sheet, dawn_range[0])
     dawn_choices =  gs.get(dawn_sheet, dawn_range[1])

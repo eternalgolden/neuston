@@ -10,14 +10,14 @@ from place import *
 ol.get_owners()
 
 
-'''
-CONFIRMING THAT STATE 44 (SHOP) HAS REFERENCE TO ITSELF
+
+#CONFIRMING THAT STATE 44 (SHOP) HAS REFERENCE TO ITSELF
 
 dawn_events = ld.init_dawn()
 for d in dawn_events:
-    if d.ID == 44:
-        print(str(d.nxt[0][1]))
-'''
+    if d.ID == 37:
+        print(str(d.results[1][0]))
+
 
 '''
 RANGE CALC TESTING
@@ -28,9 +28,9 @@ for i in range(50):
 gs.put("debug", (gs.range_calc("A1", 50, True)), data)
 '''
 
-'''
 
-RESULT TESTING
+'''
+#RESULT TESTING
 
 results = gs.flatten(gs.get("탐색:새벽녘", "F5:F136"))
 

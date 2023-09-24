@@ -33,3 +33,17 @@ class Stat(Enum):
 class Dest(Enum):
     DAWN = "새벽녘마을"
     HQ = "본부"
+
+class Channel(Enum):
+    HQ = "본부"
+    S1 = "조사-1"
+    S2 = "조사-2"
+    S3 = "조사-3"
+    S4 = "개인조사-4"
+ 
+class M_Channel(Enum):
+    HQ = "mock-본부"
+    S1 = "mock-조사1"
+    S2 = "mock-조사2"
+    S3 = "mock-조사3"
+    S4 = "mock-조사4"

@@ -14,7 +14,14 @@
 
 """
 
+DIVIDE = ".\t\t--------------\t\t."
 
+def wrong_command(msg):
+    global DIVIDE
+    return_string = f"[{msg}] <- 명령어나 캐릭터의 이름이 올바르지 않습니다.\n"
+    return_string += "혹시 모를 일을 대비해 이 뒤의 명령어는 전부 무효화됩니다. 다시 정확히 써주세요.\n" + DIVIDE + "\n\n" 
+    return return_string
+ 
 def choice_formatter(c):
 
     cs = ""
@@ -26,11 +33,25 @@ def choice_formatter(c):
     return cs
 
 def content_formatter(character):
-    search_num = 5+character.search_count
-    cs = (f":mag: 탐색 진행 현황 ({search_num}/5)\n"
+    search_num = character.search_count
+    cs = (f":mag: 탐색 진행 현황 ({search_num})\n"
           f"> 현재 구역: {character.place.name}\n"
           f"> 인원: {character.name}\n")
     cs += f"{character.state.content}\n"
+    cs += choice_formatter(character.state.choices)
+    return cs
+
+def content_formatter_plus(character, others, search_count):
+    search_num = search_count
+    cs = (f":mag: 탐색 진행 현황 ({search_num})\n"
+          f"> 현재 구역: {character.place.name}\n"
+          f"> 인원: {character.name}")
+    
+    for c in others:
+        if character.name != c.name:
+            cs += f", {c.name}"
+
+    cs += f"\n{character.state.content}\n"
     cs += choice_formatter(character.state.choices)
     return cs
 

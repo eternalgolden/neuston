@@ -149,6 +149,27 @@ class Character:
 
         return return_string
 
+    def search_plus(self, others, search_count):
+
+        if len(self.place.free_search_deck) == 0:
+            return "*이 곳에선 탐색을 진행할 수 없다. 다른곳으로 이동 후 시도하자.*"
+
+        # choose a new state
+        if self.state == None:
+            new_event = random.choice(self.place.free_search_deck)
+            while new_event.ID in self.already_seen:
+                new_event = random.choice(self.place.free_search_deck)
+            self.state = new_event
+            self.already_seen.append(new_event.ID)
+
+
+        return_string = frmat.content_formatter_plus(self, others, search_count)
+
+        if len(self.state.choices) == 0:
+            self.state = None
+
+        return return_string
+
     def possible_result(self, result, roll_20):
 
         # [ money, roll, min success, filter, success, (items/amount) x n ]
@@ -240,7 +261,7 @@ class Character:
 
             if chosen_result == None:
                 self.state = None
-                return "*에러가 발생했다. 이지비에게 보고하고... 일단은 현 탐색상황을 리셋시켰으니 다른곳으로 가보세요*"
+                return [None, "*에러가 발생했다. 이지비에게 보고하고... 일단은 현 탐색상황을 리셋시켰으니 탐색 한번더~*"]
             else:
                 # apply search count, go to next
                 self.search_count += chosen_result.search_count
@@ -265,15 +286,14 @@ class Character:
                     ret = frmat.roll_formatter(bar, self.stats[bar], filt, int(self.stats[bar]/5), roll_20, min_suc, succ) + ret
 
                 # debug
-                print("in here")
                 print(str(chosen_result))
 
-                return ret
+                return [chosen_result, ret]
 
         except ValueError as e:
             return_string = f"*'{msg}'는 목록에 없다.*\n"
             return_string += frmat.choice_formatter(self.state.choices)
-            return return_string
+            return [None, return_string]
 
 
 
