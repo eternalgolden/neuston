@@ -33,8 +33,8 @@ def choice_formatter(c):
     return cs
 
 def content_formatter(character):
-    search_num = character.search_count
-    cs = (f":mag: 탐색 진행 현황 ({search_num})\n"
+    search_num = character.stats['AQU'] - character.search_count
+    cs = (f":mag: 탐색 진행 현황 ({search_num}/{character.stats['AQU']})\n"
           f"> 현재 구역: {character.place.name}\n"
           f"> 인원: {character.name}\n")
     cs += f"{character.state.content}\n"

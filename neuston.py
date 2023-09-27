@@ -31,6 +31,8 @@ from discord.ext import commands
 from place import *
 from threads import *
 from instance import *
+from helper import *
+from image import *
 
 
 import google_sheets as gs
@@ -47,18 +49,6 @@ bulletin_board = {}
 instances = {'S1': None, 'S2': None, 'S3': None}
 
 debugging = True
-
-def parse_place(msg):
-    new_place = None
-    mm = msg.split("-")[1]
-
-    if mm == "새벽녘마을":
-        new_place = places['dawn']
-    elif mm  == "본부":
-        new_place = places['hq']
-
-    return new_place
-
 
 @client.event
 async def on_ready():
@@ -129,6 +119,10 @@ async def on_message(m):
         exit_event.set()
         restore_timer.join()
         await client.close()
+
+    if content == "ㅁ":
+        await make_testing_checkerboard(m.channel)
+        return
 
     if "Direct Message" in channel and username in owners.keys():
         if not "] " in content:
@@ -201,7 +195,7 @@ async def on_message(m):
         elif "정보" == msg:
             return_string += f"[:mag: 알티 아스테레스 [본부]가 위치해있는 머큐리에서 탐색 가능한 구역 목록입니다.\n"
             for p, pl in places.items():
-                ret_string += f"> {pl.name}\n약칭 - {pl.kor_acr}\n{pl.desc}\n"
+                return_string += f"> {pl.name}\n약칭 - {pl.kor_acr}\n{pl.desc}\n"
             return_string += f"\n[이동-구역이름(약칭)] 으로 움직일 수 있습니다.]"
 
         elif curr_char == None:
@@ -295,7 +289,7 @@ async def on_message(m):
                             return_string += "\n*[본부]로 채널을 이동하자.*"
                 elif "탐색" == msg:
                     curr_char.search_count -= 1
-                    if curr_char.search_count < 0:
+                    if (curr_char.search_count) < 0:
                         curr_char.search_count = -1
                         curr_char.state = None
                         return_string += "*오늘은 더이상 탐색을 진행할 수 없다.*"
