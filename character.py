@@ -65,6 +65,9 @@ class Character:
     def add_bag(self, item, amount, update):
         amount = int(amount)
 
+        if len(self.bag.keys()) >= 100:
+            return False
+
         if not item in self.bag:
             self.bag[item] = []
         for i in range(int(amount/99)):
@@ -83,6 +86,8 @@ class Character:
         if update:
             self.put_bag()
 
+        return True
+
     def subtract_bag(self, item, amount):
         amount = int(amount)
 
@@ -93,7 +98,6 @@ class Character:
 
             last_ind = len(self.bag[item])-1
             self.bag[item][last_ind] -= amount%99
-            #print(item, last_ind, self.bag[item][last_ind], len(self.bag[item]))
             if self.bag[item][last_ind] <= 0 and len(self.bag[item]) > 1:
                 self.bag[item][last_ind-1] += self.bag[item][last_ind]
                 self.bag[item].pop()
