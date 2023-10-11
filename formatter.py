@@ -72,14 +72,25 @@ def roll_formatter(aspect, self_stat, filt, self_filt, roll_20, min_succ, succ):
     return ret_str
 
 def character_formatter(ch):
-    ret = f"**알티 아스테레스 토벌대원 정보**\n\n{ch.name}\t[HP] 00/00\t[SAN] 00/00\t{ch.money} C\nHP 상세▼\n"
-    ret += f"[머리] 00/00\t[몸통] 00/00\t[팔] 00/00\t[다리] 00/00\n\n현위치: {ch.place.name}\n"
+    ret = f"**알티 아스테레스 토벌대원 정보**\n\n{ch.name}\t[HP] " + str(sum([v for k, v in ch.hp.items()]) - ch.hp['san']) + "/" + str(ch.full_hp()) +\
+            "\t[SAN] " + str(ch.hp['san']) + "/" + str(ch.san()) +\
+            f"\t{ch.money} C\nHP 상세▼\n"
+    ret += f"[머리] "       + str(ch.hp['head']) + "/" + str(ch.head_hp()) +\
+            "\t[몸통] "     + str(ch.hp['body']) + "/" + str(ch.body_hp()) +\
+            "\t[팔] "       + str(ch.hp['arm']) + "/" + str(ch.arm_hp()) +\
+            "\t[다리] "     + str(ch.hp['leg']) + "/" + str(ch.leg_hp()) +\
+            f"\n\n현위치: {ch.place.name}\n"
     #    ret += "[머리] 00/00 [몸통] 00/00 [팔] 00/00 [다리] 00/00\n\n현위치: {ch.place.name} 날씨:날씨\n"
     ret+= f"[TRS] {ch.stats['TRS']}\t[ETH] {ch.stats['ETH']}\t[AQU] {ch.stats['AQU']}\t[KIN] {ch.stats['KIN']}\n\n" 
     # ret += "[디버프][버프]\n"
     ret += "소지품 ▼\n"
     for i,j in ch.bag.items():
-        ret += f"{i}({j}), "
+        nums = [a for a in j]
+        ret += f"{i}("
+        for a in nums:
+            ret += f"{a}, "
+        ret = ret[:len(ret)-2]
+        ret += "), "
     ret = ret[:len(ret)-2]
     return ret
 

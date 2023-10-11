@@ -40,6 +40,7 @@ import owner_loader as ol
 import formatter as frmat
 import discord
 import time
+import random
 
 places = {}
 characters = {}
@@ -50,12 +51,24 @@ instances = {'S1': None, 'S2': None, 'S3': None}
 
 debugging = True
 
+def parse_place(msg):
+    new_place = None
+    mm = msg.split("-")[1]
+
+    if mm == "새벽녘마을":
+        new_place = places['dawn']
+    elif mm  == "본부":
+        new_place = places['hq']
+
+    return new_place
+
 @client.event
 async def on_ready():
 
     global places, characters, owners
     global debugging
     global restore_timer
+    global bulletin_board
 
     print("starting time measuring thread...")
     restore_timer.start()
@@ -99,6 +112,9 @@ async def on_ready():
     instances['S2'] = Instance('S2')
     instances['S3'] = Instance('S3')
     print("setting up instances complete")
+
+    print("setting up bulletin board...")
+    bulletin_board = init_bulletin()
 
     print(f'{client.user.name} -- Finished loading everything!')
 
@@ -303,6 +319,7 @@ async def on_message(m):
                 if "게시판" == msg:
                     bulletin_messages = [bulletin_board[character] for character in bulletin_board.keys()]
                     return_string += " === 본부 게시판 ===\n" 
+                    random.shuffle(bulletin_messages)
                     for b in bulletin_messages:
                         return_string += f'"{b}"\n'
                     return_string = return_string[:len(return_string)-1]

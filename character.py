@@ -22,7 +22,12 @@ class Character:
     state = None
     search_count = 0
     stats = {}
+    # name this different things later for each search event
     already_seen = []
+    hp = {}
+    stamina = 0
+    cost = 0
+
 
 
     def __init__(self, name):
@@ -35,38 +40,67 @@ class Character:
         self.title_list = []
         self.state = None
         self.search_count = 0
+        self.stamina = 0
+        self.cost = 0
                     #TRS ETH AQU KIN
         self.stats = {'TRS': 0, 'ETH': 0, 'AQU': 0, 'KIN': 0}
+        self.hp = {'head': 0, 'body': 0, 'arm': 0, 'leg': 0, 'san':0 }
+
         self.already_seen = []
 
 
+    def head_hp(self):
+        return self.stats['TRS']
+    def body_hp(self):
+        return self.stats['TRS'] + 2
+    def arm_hp(self):
+        return int(self.stats['TRS'] * 1.6)
+    def leg_hp(self):
+        return int(self.stats['TRS'] * 1.6)
+    def san(self):
+        return self.stats['TRS'] * 5
+    def full_hp(self):
+        return self.head_hp() + self.body_hp() + self.arm_hp() + self.leg_hp()
+
     def add_bag(self, item, amount, update):
-        if item in self.bag:
-            self.bag[item] += int(amount)
-        else:
-            self.bag[item] = int(amount)
+        amount = int(amount)
+
+        if not item in self.bag:
+            self.bag[item] = []
+        for i in range(int(amount/99)):
+            self.bag[item].insert(0, 99) 
+
+        if amount%99 != 0:
+            if len(self.bag[item]) > 0:
+                self.bag[item][len(self.bag[item])-1] += amount%99
+            else:
+                self.bag[item].append(amount%99)
+
+            if self.bag[item][len(self.bag[item])-1] > 99:
+                self.bag[item].insert(0, 99)
+                self.bag[item][len(self.bag[item])-1] -= 99
 
         if update:
             self.put_bag()
-        return True
 
     def subtract_bag(self, item, amount):
+        amount = int(amount)
+
         if item in self.bag:
-            if self.bag[item] >= amount:
-                self.bag[item] -= amount
+            for i in range(int(amount/99)):
+                if len(self.bag[item]) != 0:
+                    self.bag[item].pop(0)
 
-                delete_keys = []
-                for k, v in self.bag.items():
-                    if v == 0:
-                        delete_keys.append(k)
-                for k in deleteo_keys:
-                    self.bag.pop(k)
+            last_ind = len(self.bag[item])-1
+            self.bag[item][last_ind] -= amount%99
+            #print(item, last_ind, self.bag[item][last_ind], len(self.bag[item]))
+            if self.bag[item][last_ind] <= 0 and len(self.bag[item]) > 1:
+                self.bag[item][last_ind-1] += self.bag[item][last_ind]
+                self.bag[item].pop()
+            elif self.bag[item][last_ind] <= 0:
+                del self.bag[item]
+            self.put_bag()
 
-                self.put_bag()
-                return True
-            else:
-                return False
-        return False
 
     def add_money(self, m):
         ret_string = ""
@@ -94,7 +128,7 @@ class Character:
         top = list(self.bag.keys())
         bottom = []
         for k in top:
-            bottom.append(self.bag[k])
+            bottom.append(sum(self.bag[k]))
         top.append("")
         bottom.append("")
         how_many = len(self.bag) + 1

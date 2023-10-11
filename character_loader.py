@@ -25,6 +25,11 @@ def get_characters():
         current.money = int(row[2])
         current.stats = {'TRS': int(row[4]), 'ETH': int(row[5]), 'AQU': int(row[6]), 'KIN':int(row[7])}
         current.search_count = current.stats['AQU']
+        current.stamina = int(current.stats['AQU'] * 1.5)
+        current.cost = int(current.stats['AQU'] * 0.2)
+        current.hp = {'head': current.stats['TRS'], 'body': current.stats['TRS'] + 2, 'arm': int(current.stats['TRS'] * 1.6), 'leg': int(current.stats['TRS']*1.6),\
+                        'san': current.stats['ETH'] * 5 }
+
         current.place = row[3] # later replace with place obj
         current.bag_index[0] = "B"
         current.bag_index[1] = r+1+2

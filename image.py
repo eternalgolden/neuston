@@ -10,7 +10,7 @@ import discord
 from io import BytesIO
 import requests
 
-async def make_testing_checkerboard(channel):
+def testing():
     cell_size = 100
     board_size = (cell_size*22)
     checker_board = Image.new(mode="RGB", size=(board_size, board_size), color=(255, 255, 255))
@@ -24,15 +24,12 @@ async def make_testing_checkerboard(channel):
     checker_board.paste(horiz_bar, ((cell_size*21), 0))
 
     vert_line = Image.new(mode="RGB", size=(2,board_size), color=(0,0,0))
-    horiz_line = Image.new(mode="RGB", size=(board_size,2), color =(0,0,0))
+    horiz_line = Image.new(mode="RGB", size=(board_size, 2), color =(0,0,0))
     for i in range(1, 22):
         checker_board.paste(vert_line, ((cell_size*i), 0))
-        checker_board.paste(horiz_line, (0, ((cell_size*i))))
-    with BytesIO() as image_binary:
-        checker_board.save(image_binary, "png")
-        image_binary.seek(0)
-        out = discord.File(fp=image_binary, filename="checkerboard.png")
-        await channel.send(file=out)
+        checker_board.paste(horiz_line, (0, (cell_size*i)))
+
+    checker_board.show()
 
 
 '''
