@@ -22,11 +22,13 @@ class Character:
     state = None
     search_count = 0
     stats = {}
-    # name this different things later for each search event
     already_seen = []
     hp = {}
     stamina = 0
     cost = 0
+    instance = None
+
+
 
 
 
@@ -47,7 +49,10 @@ class Character:
         self.hp = {'head': 0, 'body': 0, 'arm': 0, 'leg': 0, 'san':0 }
 
         self.already_seen = []
+        self.instance = None
 
+
+# ----------- macro functions
 
     def head_hp(self):
         return self.stats['TRS']
@@ -62,8 +67,22 @@ class Character:
     def full_hp(self):
         return self.head_hp() + self.body_hp() + self.arm_hp() + self.leg_hp()
 
+# ------------- inventory related
+
+#        function name                                   does it have return message                 desc
+#    - add_bag (self, item, amt, bool_update)                    no (returns bool)               adds something to inventory by amt
+#    - subtract_bag (self, item, amt)                            no                              pulls something from inventory by amt
+#    - give (self, other, item, amt)                             yes                             gives something to someone by amt
+#    - bag_is_full (unfinished)                                  no                              check if char's bag is at capacity (currently 100)
+#    - print_bag(self)                                           yes                             prints one's bag inventory
+#    - put_bag(self)                                             no                              puts bag info onto the sheets(database)
+
+
+
     def add_bag(self, item, amount, update):
         amount = int(amount)
+        if amount == 0:
+            return True
 
         if len(self.bag.keys()) >= 100:
             return False
@@ -90,6 +109,8 @@ class Character:
 
     def subtract_bag(self, item, amount):
         amount = int(amount)
+        if amount == 0:
+            return
 
         if item in self.bag:
             for i in range(int(amount/99)):
@@ -105,21 +126,30 @@ class Character:
                 del self.bag[item]
             self.put_bag()
 
+    def give(self, ch, item, amt):
+        if not item in self.bag:
+            return f"*[{self.name}]가 가진 [{item}]의 갯수가 너무 적다.*"
+        elif ch.bag_is_full():
+            return f"*[{ch.name}]의 가방에 공간이 부족하다.*"
 
-    def add_money(self, m):
-        ret_string = ""
-        self.money += m
+        stacks = int(amt/99)
+        left = amt%99
 
-        if m > 0:
-            ret_string = f"*{self.name}의 소지금에 {m}C가 추가됐다.*"
-        else:
-            if self.money < 0:
-                self.money = 0
-            ret_string = f"*{self.name}의 소지금에 {m}C가 추가됐다.*"
+        if left != 0:
+            stacks += 1
+
+        if len(self.bag[item]) < stacks:
+            return f"*[{self.name}]가 가진 [{item}]의 갯수가 너무 적다.*"
+
+        self.subtract_bag(item, amt)
+        ch.add_bag(item, amt, True)
+        return f"*[{ch.name}]에게 [{item}]을 [{amt}]개 주었다.*"
 
 
-        gs.put(Sheet.CHARACTER.value, 'C' + str(self.bag_index[1]-1), [self.money])
-        return ret_string
+
+    def bag_is_full(self):
+        #dummy function for now
+        return False
 
     def print_bag(self):
         compiled_string = ""
@@ -143,16 +173,33 @@ class Character:
 
         gs.put_multiple(Sheet.CHARACTER.value, top_range, [top, bottom])
 
- 
+# ------------- money functions
+
+    def add_money(self, m):
+        ret_string = ""
+        self.money += m
+
+        if m > 0:
+            ret_string = f"*{self.name}의 소지금에 {m}C가 추가됐다.*"
+        else:
+            if self.money < 0:
+                self.money = 0
+            ret_string = f"*{self.name}의 소지금에 {m}C가 추가됐다.*"
+
+
+        gs.put(Sheet.CHARACTER.value, 'C' + str(self.bag_index[1]-1), [self.money])
+        return ret_string
+
+
     # 이동 
     def move_places(self, new_place):
         if self.state == None:
             self.place = new_place
             row = self.bag_index[1]-1
             gs.put(Sheet.CHARACTER.value, "D" + str(row), [new_place.kor_acr])
-            return new_place.upon_arrival + f"\n*{self.name}(은)는 {new_place.name}에 도착했다.*"
+            return new_place.upon_arrival + f"\n*[SYS] {self.name}(은)는 {new_place.name}에 도착했다.*"
         else:
-            return "*위치를 이동하기 전, 현 위치에서의 탐색을 완료하자.*\n" + frmat.content_formatter(self)
+            return "*[ERROR] 위치를 이동하기 전, 현 위치에서의 탐색을 완료하자.*\n" + frmat.content_formatter(self)
 
 
     def __str__(self):
@@ -238,7 +285,7 @@ class Character:
     def choice(self, msg):
 
         if self.state == None:
-            return
+            return [None, "*잘못된 선택지다.*"]
 
         ret_msg = ""
         roll_20 = random.randint(1,20)

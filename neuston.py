@@ -141,36 +141,26 @@ async def on_message(m):
         return
 
     if "Direct Message" in channel and username in owners.keys():
-        if not "] " in content:
-            await m.channel.send(f"*[캐릭터이름](한칸띄우기)[메세지]의 양식에 맞춰 메세지를 등록해주세요.*")
-            return
-        msgs = content.split("] ")
-        ch_name = msgs[0][1:]
-        if len(msgs) == 1:
-            await m.channel.send(f"*메세지를 제대로 입력해주세요.*")
-            return
-        else:
-            bullet_message = msgs[1]
+        if "] " in content:
+#            await m.channel.send(f"*[캐릭터이름](한칸띄우기)[메세지]의 양식에 맞춰 메세지를 등록하자.*")
+            msgs = content.split("] ")
+            ch_name = msgs[0][1:]
+            if len(msgs) > 1 and ch_name in characters.keys():
+                bulletin_board[ch_name] = msgs[1]
+                # update bulletin
+                said_character = characters[ch_name]
+                gs.put_single(Sheet.CHARACTER.value, 'I' + str(int(said_character.bag_index[1])-1), msgs[1])
+                await m.channel.send(f"*{SystemMessage.CONFIRM.value}*\n*\"{msgs[1]}\"*")
+                return
+        await m.channel.send("*{SystemMessage.WRONGFORM.value}*")
+        return
 
-        if ch_name in characters.keys():
-            bulletin_board[ch_name] = bullet_message
-
-            # update bulletin
-            said_character = characters[ch_name]
-            gs.put_single(Sheet.CHARACTER.value, 'I' + str(int(said_character.bag_index[1])-1), bullet_message)
-
-            await m.channel.send(f"*성공적으로 게시판 메세지가 업데이트 되었습니다.*\n*[{bullet_message}]*")
-            return
-        else:
-            await m.channel.send("*해당 캐릭터를 찾지 못했습니다.*")
-            return
-
-    if debugging == True and (not channel in [e.value for e in M_Channel] and channel != "mock-본부" and channel != "mock-조사4"):
+    if debugging == True and (not channel in [e.value for e in M_Channel] and channel != "mock-본부" and channel != "mock-조사4" and channel != "커맨드"):
         return
 
     # all msgs stored in here
     msgs = []
-    return_string = ""
+    ret_str = ""
 
     # start splitting msg
     msg = content.split("[")
@@ -190,13 +180,22 @@ async def on_message(m):
 
     set_character = False
 
+    command_num  = 1
+
     # process all messages
     for msg in msgs:
+
+        return_string = ""
+                
+
         # switch characters
         if msg in characters.keys():
             ch = curr_owner.find_character(msg)
+            if channel == "커맨드":
+                print(str(ch))
+                return
             if ch == None:
-                return_string += f"*당신은 '{msg}'의 권한이 없습니다. 다시 설정해주십시오.*\n"
+                return_string += f"*당신은 '{msg}'의 권한이 없다.*\n"
                 await m.channel.send(return_string)
                 return
             else:
@@ -208,14 +207,19 @@ async def on_message(m):
             return_string += curr_owner.set_main(ch_name) + "\n"
             curr_char = curr_owner.main
 
-        elif "정보" == msg:
-            return_string += f"[:mag: 알티 아스테레스 [본부]가 위치해있는 머큐리에서 탐색 가능한 구역 목록입니다.\n"
-            for p, pl in places.items():
-                return_string += f"> {pl.name}\n약칭 - {pl.kor_acr}\n{pl.desc}\n"
-            return_string += f"\n[이동-구역이름(약칭)] 으로 움직일 수 있습니다.]"
+        elif "사용법" == msg:
+
+            #return_string += f"[:mag: 알티 아스테레스 [본부]가 위치해있는 머큐리에서 탐색 가능한 구역 목록이다.\n"
+            #for p, pl in places.items():
+            #    return_string += f"> {pl.name}\n약칭 - {pl.kor_acr}\n{pl.desc}\n"
+            #return_string += f"\n[이동-구역이름(약칭)] 으로 움직일 수 있다.]"
+            
+            await client.send_message(m.author, SystemMessage.INFO.value)
+            return
+
 
         elif curr_char == None:
-            return_string += f"*[{msg}] 전에 먼저 메인캐릭터를 설정해주세요.*\n현재 {curr_owner.name} 님은 {str(list(curr_owner.character_list.keys()))}중 선택하실 수 있습니다."
+            return_string += f"*[{msg}] 전에 먼저 메인캐릭터를 설정하자.*\n{str(list(curr_owner.character_list.keys()))}중 선택 가능하다."
             await m.channel.send(return_string)
             return
 
@@ -228,15 +232,9 @@ async def on_message(m):
         elif "날씨" == msg:
             pass
 
-        else:   # actions depending on instance -- 이동, 탐색 / else -> choice
+        else:   # actions depending on instance -- 이동, 탐색, -> / else: choice
 
-            # check if in instance first
-            # S1, S2 or S3
-            for k, v in instances.items():
-                if curr_char in v.character_list:
-                    curr_instance = k
-                    break
-
+            curr_instance = curr_char.instance
 
             # channel reference
             channel_pool = Channel
@@ -257,6 +255,7 @@ async def on_message(m):
 
                     # append to instance
                     instances[channel_name].character_list.append(curr_char)
+                    curr_char.instance = instances[channel_name]
                     curr_instance = channel_name
 
                     print(curr_char.search_count)
@@ -269,6 +268,30 @@ async def on_message(m):
                     print(curr_instance)
 
                     return_string += f"*[{curr_char.name}](이)가 [{channel}]에 참여한다.*"
+
+            elif "->" in msg and ", " in msg: # the give command
+                # first slot item, second character, third amount
+                # item->ch, amt
+                splitted = msg.split("->")
+                sp = splitted[1].split(", ")
+                receiving = None
+
+                item = splitted[0]
+                if sp[0] in characters:
+                    receiving = characters[sp[0]]
+                else:
+                    receiving= None
+
+                amt = sp[1]
+
+                if not amt.isdigit():
+                    return_string += "*물건을 건넬 때에는 올바른 수치를 입력하자.*"
+
+                elif receiving != None and receiving.instance == curr_char.instance and receiving.place == curr_char.place:
+                    return_string += curr_char.give(receiving, item, int(amt))
+
+                else:
+                    return_string += f"*[{sp[0]}]은(는) 존재하지 않는 사람이다. 적어도, 이 공간에는.*"
 
 
                 # wrong channels -- wrote in hq but in another instance (or search 4)
@@ -302,6 +325,7 @@ async def on_message(m):
                     else:
                         return_string += curr_char.move_places(going_to)
                         if curr_char.place.acr == "hq":
+                            curr_char.instance = None
                             return_string += "\n*[본부]로 채널을 이동하자.*"
                 elif "탐색" == msg:
                     curr_char.search_count -= 1
@@ -330,9 +354,8 @@ async def on_message(m):
                     else:
                         return_string += curr_char.move_places(going_to)
                         if curr_char.state == None:
+                            curr_char.instance = None
                             return_string += "\n*[개인조사-4]로 이동해 탐색을 진행하자.*"
-               
-
             else:
                 return_string += frmat.wrong_command(msg)
                 break
@@ -342,82 +365,22 @@ async def on_message(m):
         if set_character:
             set_character = False
         else:
-            return_string += "\n" + frmat.DIVIDE + "\n\n"
+            #return_string += "\n" + frmat.DIVIDE + "\n\n"
+            return_string += "\n\n"
+
+            ret_str += f"[{command_num}] ------------------- {msg}\n"
+            ret_str += return_string
+
+        return_string = ""
+        command_num += 1
            
 
     if return_string != "":
-        return_string = return_string[:len(return_string) - 23]
-        await m.channel.send(return_string)
+        ret_str += return_string
+    if ret_str != "":
+        ret_str = ret_str[:len(ret_str)-2]
+        await m.channel.send(ret_str)
     return
-
-
-# ============================================================================================================================ 
-
-    if curr_owner.main == None and not "메인" in msg:
-        ret_str ="[먼저 메인 캐릭터를 설정해주시길 바랍니다.\n"
-        ret_str += f"현재 {curr_owner.name} 님은 {str(list(curr_owner.character_list.keys()))}중 선택하실 수 있습니다.]"
-        await m.channel.send(ret_str)
-        return
-
-    elif "메인" in msg:
-        main_ch = msg.split("-")[1]
-        return_msg = curr_owner.set_main(main_ch)
-        await m.channel.send(return_msg)
-        return
-
-    elif "정보" == msg:
-        ret_str = f"[:mag: 알티 아스테레스 [본부]가 위치해있는 머큐리에서 탐색 가능한 구역 목록입니다.\n\n"
-
-        for p, pl in places.items():
-            ret_str += f"> {pl.name}\n약칭 - {pl.kor_acr}\n{pl.desc}\n"
-
-        ret_str += f"\n[이동-구역이름(약칭)] 으로 움직일 수 있습니다.]"
-        await m.channel.send(ret_str)
-        return
-
-    elif "이동" in msg:
-        new_place = None
-        mm = msg.split("-")[1]
-
-        if mm == curr_owner.main.place.kor_acr:
-            await m.channel.send(f"[이미 {curr_owner.main.name}(은)는 {mm}에 있습니다.]")
-            return
-        elif mm == "새벽녘마을":
-            new_place = places['dawn']
-        elif mm  == "본부":
-            new_place = places['hq']
-        else:
-            await m.channel.send(f"[해당 구역({mm})을 찾을 수 없습니다.]")
-            return
-
-        ret_str = curr_owner.main.move_places(new_place)
-        await m.channel.send(ret_str)
-        return
-
-    elif "탐색" == msg:
-        if curr_owner.main.search_count < -5:
-            await m.channel.send("*오늘은 더이상 탐색을 진행할 수 없다.*")
-        else:
-            await m.channel.send(curr_owner.main.search())
-        return
-
-    elif "위치" == msg:
-        await m.channel.send(frmat.place_formatter(curr_owner.main.place))
-        return
-
-    elif "나" == msg:
-        await m.channel.send(frmat.character_formatter(curr_owner.main))
-        return
-
-    else: # choices!!
-        if curr_owner.main.state != None:
-            a = curr_owner.main.choice(msg)
-            print(a)
-            if a != "":
-                await m.channel.send(a)
-        return
-
-
 
 
 client.run(TOKEN)

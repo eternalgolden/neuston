@@ -21,12 +21,22 @@ class Instance:
     def __str__(self):
         return "instance ID : " + self.ID + "\ncharacters :" + str([ch.name for ch in self.character_list]) + "enemies : " + str(len(self.enemy_list)) + "\n"
 
+    def add(self, character):
+        self.character_list.append(character)
+
+    def remove(self, character):
+        try:
+            self.character_list.remove(character)
+        except ValueError:
+            pass
+
+
     def move(self, character, place):
         return_string = character.move_places(place)
 
-        if place.acr == "hq":
-            self.character_list.remove(character)
-            return place.upon_arrival + f"\n*{character.name}(은)는 {place.name}로 돌아갔다.*"
+        #if place.acr == "hq":
+        #    self.character_list.remove(character)
+        #    return place.upon_arrival + f"\n*[SYS] {character.name}(은)는 {place.name}로 돌아갔다.*"
 
 
         if len(self.character_list) == 1:

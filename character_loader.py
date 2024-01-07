@@ -12,7 +12,7 @@ def get_characters():
 
     # get sheet
     
-    characters_info = gs.get(Sheet.CHARACTER.value, "A2:ZZ55")
+    characters_info = gs.get(Sheet.CHARACTER.value, "A2:ZZ58")
 
     characters = {}
     current = None
